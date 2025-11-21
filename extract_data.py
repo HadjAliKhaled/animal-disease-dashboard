@@ -130,6 +130,13 @@ def extract_info(url):
                 location = l.title()
                 break
         
+        # Simple heuristic for entities: Capitalized words not at start of sentence
+        # This is a basic approximation to avoid heavy NLP libraries
+        words = re.findall(r'\b[A-Z][a-zA-Z]+\b', content)
+        # Filter out common sentence starters if possible, or just keep all capitalized words for this mini-project
+        # Removing duplicates and joining
+        entities = ", ".join(sorted(list(set(words))))[:500] # Limit length
+        
         return {
             "URL": url,
             "Titre": title,
@@ -145,7 +152,7 @@ def extract_info(url):
             "Résumé 50": generate_summary(content, 50),
             "Résumé 100": generate_summary(content, 100),
             "Résumé 150": generate_summary(content, 150),
-            "Entités": ""
+            "Entités": entities
         }
 
     except Exception as e:
