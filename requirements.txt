@@ -1,7 +1,10 @@
 streamlit
-pandas
-plotly
 openpyxl
+plotly
+nltk
+tensorflow
+scikit-learn
+numpy
 requests
 beautifulsoup4
 langdetect

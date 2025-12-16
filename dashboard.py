@@ -202,7 +202,42 @@ if df is not None:
 
     st.markdown("---")
     st.subheader("🗃️ Data Explorer")
-    with st.expander("View Raw Data"):
+    # Data Explorer with improved UX
+    st.subheader("🗃️ Data Explorer with Summaries")
+    
+    # Select columns to show by default
+    default_cols = ['Titre', 'Maladie', 'Lieu', 'Date Publication', 'Source']
+    if 'Résumé 100' in df.columns:
+        default_cols.append('Résumé 100')
+    
+    # Allow user to pick an article to view details
+    selected_idx = st.selectbox("Select an article to view summary:", options=df.index, format_func=lambda x: f"{df.loc[x, 'Titre'][:80]}..." if 'Titre' in df.columns else f"Article {x}")
+    
+    if selected_idx is not None:
+        row = df.loc[selected_idx]
+        with st.container():
+            st.markdown(f"### {row['Titre'] if 'Titre' in df.columns else 'Untitled'}")
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.info(f"**Disease:** {row['Maladie'] if 'Maladie' in df.columns else 'N/A'}")
+                st.write(f"**Date:** {row['Date Publication'] if 'Date Publication' in df.columns else 'N/A'}")
+            with col_b:
+                st.success(f"**Location:** {row['Lieu'] if 'Lieu' in df.columns else 'N/A'}")
+                st.write(f"**Source:** {row['Source'] if 'Source' in df.columns else 'N/A'}")
+            
+            st.markdown("#### 📝 Summary")
+            if 'Résumé 100' in df.columns:
+                st.markdown(f"> {row['Résumé 100']}")
+            else:
+                st.warning("No summary available.")
+                
+            with st.expander("View Full Content"):
+                st.write(row['Contenu'] if 'Contenu' in df.columns else "No content.")
+                if 'URL' in df.columns:
+                    st.markdown(f"[Read Original Article]({row['URL']})")
+
+    with st.expander("View Raw Data Table"):
         st.dataframe(df, use_container_width=True)
 
     csv = df.to_csv(index=False).encode('utf-8')
