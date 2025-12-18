@@ -52,6 +52,8 @@ def load_data():
             df['Nb Caractères'] = pd.to_numeric(df['Nb Caractères'], errors='coerce').fillna(0)
         if 'Date Publication' in df.columns:
             df['Date_Obj'] = pd.to_datetime(df['Date Publication'], format='%d-%m-%Y', errors='coerce')
+        if 'Code' in df.columns:
+            df['Code'] = df['Code'].astype(str)
         return df
     except FileNotFoundError:
         return None
@@ -60,6 +62,12 @@ df = load_data()
 
 if df is not None:
     st.sidebar.header("🔍 Filters")
+    
+    # 1. Search by Code (Priority)
+    if 'Code' in df.columns:
+        search_code = st.sidebar.text_input("Search by Code", placeholder="e.g., A101")
+        if search_code:
+            df = df[df['Code'].str.contains(search_code, case=False, na=False)]
     
     if 'Date_Obj' in df.columns:
         min_date = df['Date_Obj'].min()
@@ -211,12 +219,19 @@ if df is not None:
         default_cols.append('Résumé 100')
     
     # Allow user to pick an article to view details
-    selected_idx = st.selectbox("Select an article to view summary:", options=df.index, format_func=lambda x: f"{df.loc[x, 'Titre'][:80]}..." if 'Titre' in df.columns else f"Article {x}")
+    selected_idx = st.selectbox(
+        "Select an article to view summary:", 
+        options=df.index, 
+        format_func=lambda x: f"[{df.loc[x, 'Code']}] {df.loc[x, 'Titre'][:80]}..." if 'Code' in df.columns and 'Titre' in df.columns else (f"{df.loc[x, 'Titre'][:80]}..." if 'Titre' in df.columns else f"Article {x}")
+    )
     
     if selected_idx is not None:
         row = df.loc[selected_idx]
         with st.container():
             st.markdown(f"### {row['Titre'] if 'Titre' in df.columns else 'Untitled'}")
+            
+            if 'Code' in df.columns:
+                st.caption(f"Code: {row['Code']}")
             
             col_a, col_b = st.columns(2)
             with col_a:

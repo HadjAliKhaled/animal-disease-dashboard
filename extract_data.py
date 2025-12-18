@@ -7,13 +7,32 @@ import re
 from collections import Counter
 import time
 
-def load_urls(file_path):
+def load_urls_with_codes(file_path):
     try:
         df = pd.read_excel(file_path)
+        data_pairs = []
+        
+        # Identify URL column
+        url_col = None
         if 'lien' in df.columns:
-            return df['lien'].tolist()
-        else:
-            return df.iloc[:, 1].tolist()
+            url_col = 'lien'
+        elif len(df.columns) > 1: # Assume 2nd column is URL if headers fail
+            url_col = df.columns[1]
+            
+        # Identify Code column
+        code_col = None
+        if 'code' in df.columns: # Assuming column might be named 'code'
+            code_col = 'code'
+        else: # Fallback to first column
+            code_col = df.columns[0]
+            
+        if url_col and code_col:
+            for index, row in df.iterrows():
+                data_pairs.append({
+                    'code': str(row[code_col]),
+                    'url': str(row[url_col])
+                })
+        return data_pairs
     except Exception as e:
         print(f"Error loading Excel: {e}")
         return []
@@ -50,7 +69,7 @@ def generate_summary(text, word_limit):
     final_summary = " ".join([sentences[i] for i in summary_indices])
     return final_summary
 
-def extract_info(url):
+def extract_info(url, code):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=10)
@@ -138,6 +157,7 @@ def extract_info(url):
         entities = ", ".join(sorted(list(set(words))))[:500] # Limit length
         
         return {
+            "Code": code,
             "URL": url,
             "Titre": title,
             "Contenu": content,
@@ -160,13 +180,15 @@ def extract_info(url):
         return None
 
 def main():
-    urls = load_urls('groupe14.xlsx')
-    print(f"Found {len(urls)} URLs.")
+    items = load_urls_with_codes('groupe14.xlsx')
+    print(f"Found {len(items)} items to process.")
     
     data = []
-    for i, url in enumerate(urls):
-        print(f"Processing {i+1}/{len(urls)}: {url}")
-        info = extract_info(url)
+    for i, item in enumerate(items):
+        url = item['url']
+        code = item['code']
+        print(f"Processing {i+1}/{len(items)}: [{code}] {url}")
+        info = extract_info(url, code)
         if info:
             data.append(info)
         time.sleep(1)
